@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="navigationViewColor" format="color" />
+    <attr name="bottomNavChecked" format="color" />
+    <attr name="bottomNavNotChecked" format="color" />
+    <attr name="navigationChecked" format="color"/>
+    <attr name="navigationNotChecked" format="color" />
+    <attr name="navBackgroundChecked" format="color"/>
+    <attr name="navBackgroundNotChecked" format="color" />
+</resources>

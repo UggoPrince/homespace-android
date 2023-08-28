@@ -1,0 +1,9 @@
+query GetProperties($offset: Int, $limit: Int, $search: String) {
+  getProperties(offset: $offset, limit: $limit, search: $search) {
+    properties {
+      id, title, updatedAt, country, address, description, intent, currency, propertyType, price, photos {
+        photo,
+      }
+    }, count
+  }
+}
