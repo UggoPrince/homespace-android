@@ -51,7 +51,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(binding.root)
 
         setSupportActionBar(binding.appBarMain.toolbar)
-
         drawerLayout = binding.drawerLayout
         navView = binding.navView
         bottomNavView = findViewById(R.id.bottom_nav_view)

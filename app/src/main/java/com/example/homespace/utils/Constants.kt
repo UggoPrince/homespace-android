@@ -254,3 +254,5 @@ val countryCodes =  mapOf(
         "Zimbabwe" to "ZW",
         "Åland Islands" to "AX",
     )
+
+val DEFAULT_PAGE_SIZE: Int = 0

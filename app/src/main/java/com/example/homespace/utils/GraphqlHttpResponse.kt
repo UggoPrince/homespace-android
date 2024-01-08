@@ -55,18 +55,18 @@ object GraphqlHttpResponse {
             is ApolloHttpException -> {
                 val body = e.body?.asResponseBody().toString()
                 Log.e("ApolloHttpException", e.message.toString())
-                ApiResponse(data = null, message = body, errorType = EXCEPTION)
+                ApiResponse(data = null, message = body, errorType = EXCEPTION, exception = e)
             }
             is ApolloNetworkException -> {
                 val reason = e.message!!
                 Log.e("ApolloNetworkException", e.message.toString())
-                ApiResponse(data = null, message = reason, errorType = EXCEPTION)
+                ApiResponse(data = null, message = reason, errorType = EXCEPTION, exception = e)
             }
             is SocketTimeoutException -> {
                 Log.e("SocketTimeoutException", e.message.toString())
-                ApiResponse(data = null, message = "Network timeout.", errorType = EXCEPTION)
+                ApiResponse(data = null, message = "Network timeout.", errorType = EXCEPTION, exception = e)
             }
-            else -> {ApiResponse(data = null)}
+            else -> {ApiResponse(data = null, exception = e)}
         }
     }
 }

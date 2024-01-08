@@ -1,38 +1,78 @@
 package com.example.homespace.ui.agencies
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.homespace.GetAgenciesQuery
-// import com.example.homespace.GetPropertiesStartWithCountryQuery
-import com.example.homespace.data.AgencyClient
-import kotlinx.coroutines.Dispatchers
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.example.homespace.GetAgenciesQuery.Agency
+import com.example.homespace.data.agency.AgencyRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class AgenciesViewModel(private val agencyClient: AgencyClient) : ViewModel() {
+class AgenciesViewModel(
+    private val agencyRepository: AgencyRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    val state: StateFlow<UiStateForPulledAgencies>
+    val agencies: Flow<PagingData<Agency>>
 
-    private val _agencies : MutableLiveData<List<GetAgenciesQuery.Agency>?> = MutableLiveData()
-    val agencies: MutableLiveData<List<GetAgenciesQuery.Agency>?> = _agencies
-    private val _couldGetAgencies : MutableLiveData<Boolean> = MutableLiveData(false)
-    val couldGetAgencies: LiveData<Boolean> = _couldGetAgencies
-    private val _count : MutableLiveData<Int> = MutableLiveData(0)
-    val count: LiveData<Int> = _count
+    val accept: (UiActionForAgency) -> Unit
 
-    fun getAgencies() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val result = agencyClient.getAgencies(/*searchString*/)
-                if (!result.hasErrors && result.data != null) {
-                    _agencies.postValue(result.data?.getAgencies?.agencies!!)
-                    _count.postValue(result.data?.getAgencies?.count!!.toInt())
-                    _couldGetAgencies.postValue(true)
-                } else {
-                    _agencies.postValue(null)
-                    _couldGetAgencies.postValue(false)
-                }
-            }
+    init {
+        val actionStateFlow = MutableSharedFlow<UiActionForAgency>()
+        val pulledAgencies = actionStateFlow
+            .filterIsInstance<UiActionForAgency.Pull>()
+            .distinctUntilChanged()
+            .onStart { emit(UiActionForAgency.Pull("")) }
+        val queriesScrolled = actionStateFlow
+            .filterIsInstance<UiActionForAgency.Scroll>()
+            .distinctUntilChanged()
+            .shareIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+                replay = 1
+            ).onStart { emit(UiActionForAgency.Scroll("")) }
+        agencies = pulledAgencies
+            .flatMapLatest { retrieveAgencies() }
+            .cachedIn(viewModelScope)
+        state = combine(pulledAgencies, queriesScrolled, ::Pair).map { (pulled, scroll) ->
+            UiStateForPulledAgencies(
+                // If the search query matches the scroll query, the user has scrolled
+                hasNotScrolled = pulled.query != scroll.currentQuery
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+            initialValue = UiStateForPulledAgencies()
+        )
+
+        accept = { action ->
+            viewModelScope.launch { actionStateFlow.emit(action) }
         }
     }
+
+    private fun retrieveAgencies(): Flow<PagingData<Agency>> {
+            return agencyRepository.getAgenciesFlow(initialPageNumber = 1)
+    }
 }
+
+sealed class UiActionForAgency {
+    data class Pull(val query: String) : UiActionForAgency()
+    data class Scroll(val currentQuery: String) : UiActionForAgency()
+}
+
+data class UiStateForPulledAgencies(
+    val hasNotScrolled: Boolean = false
+)

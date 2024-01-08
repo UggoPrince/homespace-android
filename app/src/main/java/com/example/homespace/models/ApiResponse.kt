@@ -8,5 +8,6 @@ data class ApiResponse<T: Any>(
     var hasErrors: Boolean = false,
     var statusCode: Int = 200,
     var errorType: String = "",
-    var message: String = ""
+    var message: String = "",
+    var exception: Exception? = null
 )

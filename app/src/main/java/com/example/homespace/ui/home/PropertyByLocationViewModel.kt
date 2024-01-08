@@ -1,12 +1,11 @@
 package com.example.homespace.ui.home
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.homespace.GetPropertiesQuery
-import kotlinx.coroutines.launch
 import com.example.homespace.GetPropertiesStartWithCountryQuery
 import com.example.homespace.data.property.PropertyRepository
 import kotlinx.coroutines.flow.Flow
@@ -21,28 +20,29 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class HomeViewModel(
+class PropertyByLocationViewModel(
     private val propertyRepository: PropertyRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val state: StateFlow<UiState>
-    val searchedProperties: Flow<PagingData<GetPropertiesQuery.Property>>
+    val state: StateFlow<UiState2>
+    val properties: Flow<PagingData<GetPropertiesStartWithCountryQuery.Property>>
 
-    val accept: (UiAction) -> Unit
+    val accept: (UiAction2) -> Unit
 
     init {
-        val initialQuery: String = savedStateHandle[LAST_SEARCH_QUERY] ?: DEFAULT_QUERY
-        val lastQueryScrolled: String = savedStateHandle[LAST_QUERY_SCROLLED] ?: DEFAULT_QUERY
-        val actionStateFlow = MutableSharedFlow<UiAction>()
-        val searches = actionStateFlow
-            .filterIsInstance<UiAction.Search>()
+        val initialQuery: String = savedStateHandle[LAST_PULL_QUERY] ?: DEFAULT_QUERY
+        val lastQueryScrolled: String = savedStateHandle[LAST_PULL_QUERY_SCROLLED] ?: DEFAULT_QUERY
+        val actionStateFlow = MutableSharedFlow<UiAction2>()
+        val pulled = actionStateFlow
+            .filterIsInstance<UiAction2.Pull>()
             .distinctUntilChanged()
         if (DEFAULT_QUERY != "")
-            searches.onStart { emit(UiAction.Search(query = initialQuery)) }
+            pulled.onStart { emit(UiAction2.Pull(query = initialQuery)) }
 
         val queriesScrolled = actionStateFlow
-            .filterIsInstance<UiAction.Scroll>()
+            .filterIsInstance<UiAction2.Scroll>()
             .distinctUntilChanged()
             // This is shared to keep the flow "hot" while caching the last query scrolled,
             // otherwise each flatMapLatest invocation would lose the last query scrolled,
@@ -52,60 +52,54 @@ class HomeViewModel(
                 replay = 1
             )
         if (DEFAULT_QUERY != "")
-            queriesScrolled.onStart { emit(UiAction.Scroll(currentQuery = lastQueryScrolled)) }
+            queriesScrolled.onStart { emit(UiAction2.Scroll(currentQuery = lastQueryScrolled)) }
 
-
-
-        searchedProperties = searches
-            .flatMapLatest { searchProperties(searchString = it.query) }
+        properties = pulled
+            .flatMapLatest { getProperties(searchString = it.query) }
             .cachedIn(viewModelScope)
 
-
-        state = combine(searches, queriesScrolled, ::Pair).map { (search, scroll) ->
-            UiState(
-                query = search.query,
+        state = combine(pulled, queriesScrolled, ::Pair).map { (pulled, scroll) ->
+            UiState2(
+                query = pulled.query,
                 lastQueryScrolled = scroll.currentQuery,
                 // If the search query matches the scroll query, the user has scrolled
-                hasNotScrolledForCurrentSearch = search.query != scroll.currentQuery
+                hasNotScrolledForCurrentSearch = pulled.query != scroll.currentQuery
             )
-        }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
-                initialValue = UiState()
-            )
+        }.stateIn(scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+            initialValue = UiState2()
+        )
 
         accept = { action ->
             viewModelScope.launch { actionStateFlow.emit(action) }
         }
     }
 
-    private fun searchProperties(searchString: String): Flow<PagingData<GetPropertiesQuery.Property>> {
-        return propertyRepository.getSearchedPropertiesFlow(
+    private fun getProperties(searchString: String): Flow<PagingData<GetPropertiesStartWithCountryQuery.Property>> {
+        val l = propertyRepository.getPropertyByCountryFlow(
             query = searchString, initialPageNumber = 1)
-    }
-
-    fun getSearchedProperty() {
-        // searchedProperties.
+        Log.d("NA HERE WE DEY", l.toString())
+        return l;
     }
 
     override fun onCleared() {
-        savedStateHandle[LAST_SEARCH_QUERY] = state.value.query
-        savedStateHandle[LAST_QUERY_SCROLLED] = state.value.lastQueryScrolled
+        savedStateHandle[LAST_PULL_QUERY] = state.value.query
+        savedStateHandle[LAST_PULL_QUERY_SCROLLED] = state.value.lastQueryScrolled
         super.onCleared()
     }
 }
 
-sealed class UiAction {
-    data class Search(val query: String) : UiAction()
-    data class Scroll(val currentQuery: String) : UiAction()
+sealed class UiAction2 {
+    data class Pull(val query: String) : UiAction2()
+    data class Scroll(val currentQuery: String) : UiAction2()
 }
 
-data class UiState(
+data class UiState2(
     val query: String = DEFAULT_QUERY,
     val lastQueryScrolled: String = DEFAULT_QUERY,
     val hasNotScrolledForCurrentSearch: Boolean = false
 )
 
-private const val LAST_QUERY_SCROLLED: String = "last_query_scrolled"
-private const val LAST_SEARCH_QUERY: String = "last_search_query"
+private const val LAST_PULL_QUERY_SCROLLED: String = "last_pull_query_scrolled"
+private const val LAST_PULL_QUERY: String = "last_pull_query"
 private const val DEFAULT_QUERY = ""
