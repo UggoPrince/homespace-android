@@ -1,0 +1,8 @@
+query GetAgencies($offset: Int, $limit: Int, $name: String, $address: String, $about: String, $country: String, $state: String) {
+  getAgencies(offset: $offset, limit: $limit, name: $name,
+    address: $address, about: $about, country: $country, state: $state) {
+    agencies {
+      id, about, name, address, banner
+    }, count
+  }
+}

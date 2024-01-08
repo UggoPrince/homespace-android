@@ -1,0 +1,9 @@
+query GetPropertiesStartWithCountry($offset: Int, $limit: Int, $search: String) {
+  getPropertiesStartWithCountry(offset: $offset, limit: $limit, search: $search) {
+    properties {
+      id, title, updatedAt, country, currency, address, description, propertyType, intent, price, photos {
+        id, photo
+        }
+    }, count
+  }
+}

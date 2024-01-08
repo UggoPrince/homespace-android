@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.homespace.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_agencies"
+        android:name="com.example.homespace.ui.agencies.AgenciesFragment"
+        android:label="@string/menu_agency"
+        tools:layout="@layout/fragment_agencies" />
+
+    <fragment
+        android:id="@+id/nav_dashboard"
+        android:name="com.example.homespace.ui.dashboard.DashboardFragment"
+        android:label="@string/menu_dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <!--<fragment
+        android:id="@+id/nav_signup"
+        android:name="com.example.homespace.ui.signup.SignUpFragment"
+        android:label="@string/menu_signup"
+        tools:layout="@layout/fragment_sign_up" />-->
+</navigation>

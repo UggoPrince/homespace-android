@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">HomeSpace</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Properties</string>
+    <string name="menu_agency">Agencies</string>
+    <string name="menu_dashboard">Dashboard</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_signup">Sign Up</string>
+    <string name="menu_login">Sign In</string>
+    <string name="menu_logout">Log Out</string>
+
+    <string name="find_home_text">Find A Space</string>
+    <string name="network_error_connecting">Network error connecting!</string>
+    <string name="try_again">Try again</string>
+</resources>
